@@ -4,7 +4,7 @@
 <div class="container mx-auto px-4 py-8">
     <div class="flex justify-between items-center mb-6">
         <h1 class="text-2xl font-bold">Ajouter un nouvel agent DGE</h1>
-        <a href="{{ route('agent_dge.users.index') }}" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
+        <a href="{{route('agent_dge.users.index')}}" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
             <i class="fas fa-arrow-left mr-2"></i> Retour à la liste
         </a>
     </div>
@@ -19,7 +19,6 @@
 
             <form method="POST" action="{{ route('agent_dge.users.store') }}">
                 @csrf
-
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <!-- Nom -->
                     <div>
