@@ -44,11 +44,7 @@ Route::prefix('espace-candidat')->group(function () {
 });
 
 
-/*
-|--------------------------------------------------------------------------
-| Routes Espace dge et admin
-|--------------------------------------------------------------------------
-*/
+
 // Routes d'authentification pour les agents DGE
 Route::prefix('agent-dge')->name('agent_dge.')->group(function () {
     // Page d'accueil publique pour les agents DGE
