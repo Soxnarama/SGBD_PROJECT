@@ -7,7 +7,7 @@ use App\Http\Controllers\AgentDGEController;
 use App\Http\Controllers\CandidatController;
 use App\Http\Controllers\UserAgentController;
 use App\Http\Controllers\Auth\AgentDGEAuthController;
-use Illuminate\Support\Facades\Route;
+
 
 
 /*
