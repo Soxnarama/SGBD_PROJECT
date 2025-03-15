@@ -1,5 +1,5 @@
 @extends('layouts.app')
-
+<!-- ce fichier gére l'ajout et la sauvegarde d'un nouvel agent dge sur la base de donnée -->
 @section('content')
 <div class="container mx-auto px-4 py-8">
     <div class="flex justify-between items-center mb-6">
