@@ -1,5 +1,5 @@
 @extends('layouts.app')
-
+<!-- ce fichier nous montre les détails de l'agent dge sélectionné -->
 @section('content')
 <div class="container mx-auto px-4 py-8">
     <div class="flex justify-between items-center mb-6">
