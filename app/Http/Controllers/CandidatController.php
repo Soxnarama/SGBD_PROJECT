@@ -239,4 +239,150 @@ class CandidatController extends Controller
                 ->withInput();
         }
     }
+
+    /**
+     * Affiche la page de confirmation après l'inscription
+     */
+    public function showConfirmation($id)
+    {
+        $this->checkAgentDGEAuth();
+
+        $candidat = Candidat::with('electeur')->findOrFail($id);
+        return view('candidats.confirmation', compact('candidat'));
+    }
+
+    /**
+     * Affiche la liste des candidats
+     */
+    public function index()
+    {
+        $this->checkAgentDGEAuth();
+
+        $candidats = Candidat::with('electeur')->orderBy('date_enregistrement', 'desc')->paginate(10);
+        return view('candidats.index', compact('candidats'));
+    }
+
+    /**
+     * Affiche les détails d'un candidat
+     */
+    public function show($id)
+    {
+        $this->checkAgentDGEAuth();
+
+        $candidat = Candidat::with('electeur')->findOrFail($id);
+        return view('candidats.details', compact('candidat'));
+    }
+
+    /**
+     * Génère un nouveau code de sécurité pour un candidat
+     */
+    public function genererNouveauCode($id)
+    {
+        $this->checkAgentDGEAuth();
+
+        $candidat = Candidat::with('electeur')->findOrFail($id);
+
+        // Générer un nouveau code de sécurité
+        $nouveauCode = str_pad(rand(0, 999999), 6, '0', STR_PAD_LEFT);
+        $candidat->code_securite = $nouveauCode;
+        $candidat->save();
+
+        // Mettre à jour le mot de passe de l'utilisateur associé
+        if ($candidat->user) {
+            $candidat->user->password = Hash::make($nouveauCode);
+            $candidat->user->save();
+        }
+
+        // Envoyer le nouveau code par email et SMS
+        try {
+            $this->mailingService->envoyerCodeSecurite(
+                $candidat->email,
+                $candidat->telephone,
+                $candidat->electeur->nom . ' ' . $candidat->electeur->prenom,
+                $nouveauCode
+            );
+        } catch (\Exception $e) {
+            Log::error('Erreur lors de l\'envoi du nouveau code de sécurité : ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Erreur lors de l\'envoi du code de sécurité. Le code a bien été généré mais n\'a pas pu être envoyé.');
+        }
+
+        return redirect()->back()->with('success', 'Un nouveau code de sécurité a été généré et envoyé au candidat.');
+    }
+
+    /**
+     * Affiche la page de connexion candidat
+     */
+    public function showLoginForm()
+    {
+        return view('candidats.login');
+    }
+
+    /**
+     * Authentifie le candidat
+     */
+    public function authenticate(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'code_securite' => 'required',
+        ]);
+
+        $candidat = Candidat::where('email', $request->email)
+            ->where('code_securite', $request->code_securite)
+            ->first();
+
+        if ($candidat) {
+            // Stocker l'ID du candidat en session
+            Session::put('candidat_id', $candidat->id);
+            Session::put('candidat_authenticated', true);
+
+            return redirect()->route('candidat.dashboard');
+        }
+
+        return back()->with('error', 'Email ou code d\'authentification incorrect.');
+    }
+
+    /**
+     * Déconnecte le candidat
+     */
+    public function logout()
+    {
+        Session::forget(['candidat_id', 'candidat_authenticated']);
+        return redirect()->route('candidat.login')->with('success', 'Vous avez été déconnecté avec succès.');
+    }
+
+    /**
+     * Affiche le tableau de bord du candidat
+     */
+    public function dashboard()
+    {
+        // Vérifier si le candidat est connecté
+        if (!Session::has('candidat_authenticated')) {
+            return redirect()->route('candidat.login')
+                ->with('error', 'Veuillez vous connecter pour accéder à votre espace.');
+        }
+
+        $candidat_id = Session::get('candidat_id');
+        $candidat = Candidat::with('electeur')->find($candidat_id);
+
+        if (!$candidat) {
+            Session::forget(['candidat_id', 'candidat_authenticated']);
+            return redirect()->route('candidat.login')
+                ->with('error', 'Session invalide. Veuillez vous reconnecter.');
+        }
+
+        // Statistiques du candidat
+        $stats = $this->getStatistics($candidat_id);
+
+        // Données pour le graphique d'évolution
+        $graphData = $this->getGraphData($candidat_id);
+
+        // Données pour le graphique de répartition régionale
+        $regionsData = $this->getRegionData($candidat_id);
+
+        // Derniers parrains
+        $derniersParrains = $this->getDerniersParrains($candidat_id);
+
+        return view('candidats.dashboard', compact('candidat', 'stats', 'graphData', 'regionsData', 'derniersParrains'));
+    }
 }
