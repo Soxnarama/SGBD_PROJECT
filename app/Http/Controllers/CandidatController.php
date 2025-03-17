@@ -385,4 +385,163 @@ class CandidatController extends Controller
 
         return view('candidats.dashboard', compact('candidat', 'stats', 'graphData', 'regionsData', 'derniersParrains'));
     }
+
+    /**
+     * Récupère les statistiques du candidat et simule des données si nécessaire
+     */
+    private function getStatistics($candidat_id)
+    {
+        $today = Carbon::today();
+        $yesterday = Carbon::yesterday();
+        $lastWeekStart = Carbon::today()->subDays(14);
+        $lastWeekEnd = Carbon::today()->subDays(8);
+        $thisWeekStart = Carbon::today()->subDays(7);
+
+        // Vérifier s'il existe des parrains réels pour ce candidat
+        $totalParrains = Parrain::where('candidat_id', $candidat_id)->count();
+
+        // Si aucun parrain réel n'existe, générer des données simulées
+        if ($totalParrains == 0) {
+            // Simuler un nombre total de parrains entre 500 et 3000
+            $totalParrains = rand(500, 3000);
+
+            // Simuler des parrains récents (10-20% du total)
+            $parrainsRecents = rand(intval($totalParrains * 0.1), intval($totalParrains * 0.2));
+
+            // Simuler des parrains de la semaine précédente (légèrement moins que parrains récents)
+            $parrainsSemaineDerniere = rand(intval($parrainsRecents * 0.7), intval($parrainsRecents * 1.1));
+
+            // Calculer la tendance
+            $tendance = $parrainsSemaineDerniere > 0 ?
+                round((($parrainsRecents - $parrainsSemaineDerniere) / $parrainsSemaineDerniere) * 100) :
+                100;
+
+            // Simuler des parrains aujourd'hui (0-5% du total)
+            $parrainsAujourdhui = rand(0, intval($totalParrains * 0.05));
+
+            // Simuler des parrains hier (similaire à aujourd'hui)
+            $parrainsHier = rand(0, intval($totalParrains * 0.05));
+
+            $comparaisonHier = $parrainsAujourdhui - $parrainsHier;
+        }
+        // Sinon utiliser les données réelles
+        else {
+            $parrainsRecents = Parrain::where('candidat_id', $candidat_id)
+                ->where('created_at', '>=', $thisWeekStart)
+                ->count();
+
+            $parrainsSemaineDerniere = Parrain::where('candidat_id', $candidat_id)
+                ->whereBetween('created_at', [$lastWeekStart, $lastWeekEnd])
+                ->count();
+
+            $tendance = 0;
+            if ($parrainsSemaineDerniere > 0) {
+                $tendance = round((($parrainsRecents - $parrainsSemaineDerniere) / $parrainsSemaineDerniere) * 100);
+            } elseif ($parrainsRecents > 0) {
+                $tendance = 100;
+            }
+
+            $parrainsAujourdhui = Parrain::where('candidat_id', $candidat_id)
+                ->whereDate('created_at', $today)
+                ->count();
+
+            $parrainsHier = Parrain::where('candidat_id', $candidat_id)
+                ->whereDate('created_at', $yesterday)
+                ->count();
+
+            $comparaisonHier = $parrainsAujourdhui - $parrainsHier;
+        }
+
+        // Objectif (exemple: 7000 parrains)
+        $objectif = 7000;
+
+        return [
+            'totalParrains' => $totalParrains,
+            'parrainsRecents' => $parrainsRecents,
+            'tendance' => $tendance,
+            'parrainsAujourdhui' => $parrainsAujourdhui,
+            'comparaisonHier' => $comparaisonHier,
+            'objectif' => $objectif,
+        ];
+    }
+
+    /**
+     * Récupère ou simule les données pour le graphique d'évolution
+     */
+    private function getGraphData($candidat_id)
+    {
+        // Récupérer les données des 30 derniers jours
+        $startDate = Carbon::now()->subDays(29)->startOfDay();
+        $endDate = Carbon::now()->endOfDay();
+
+        // Récupérer les parrainages quotidiens réels
+        $parrainages = Parrain::where('candidat_id', $candidat_id)
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->selectRaw('DATE(created_at) as date, COUNT(*) as count')
+            ->groupBy('date')
+            ->orderBy('date')
+            ->get();
+
+        $dates = [];
+        $dailyData = [];
+        $cumulativeData = [];
+        $cumulative = 0;
+
+        // Vérifier s'il n'y a pas de données réelles à afficher
+        if ($parrainages->isEmpty()) {
+            // Simuler des données progressives sur 30 jours
+            $totalSimule = rand(500, 3000);
+            $facteurDistribution = []; // Facteurs pour distribuer des données simulées de façon réaliste
+
+            // Générer une distribution aléatoire mais réaliste (croissance progressive)
+            $totalFacteur = 0;
+            for ($i = 0; $i < 30; $i++) {
+                // La probabilité augmente progressivement, avec des jours plus actifs
+                $jour = $i + 1;
+                $facteur = rand(1, 5) * ($jour / 15);
+                $facteurDistribution[] = $facteur;
+                $totalFacteur += $facteur;
+            }
+
+            // Distribuer le total simulé sur les 30 jours selon les facteurs
+            $cumulative = 0;
+            for ($i = 0; $i < 30; $i++) {
+                $date = Carbon::now()->subDays(29 - $i)->format('Y-m-d');
+                $dates[] = Carbon::parse($date)->format('d/m');
+
+                // Calculer le nombre de parrainages pour ce jour
+                $dailyCount = intval(($facteurDistribution[$i] / $totalFacteur) * $totalSimule);
+                if ($i === 29) {
+                    // Ajuster le dernier jour pour arriver exactement au total simulé
+                    $dailyCount = $totalSimule - $cumulative;
+                }
+
+                $dailyData[] = $dailyCount;
+                $cumulative += $dailyCount;
+                $cumulativeData[] = $cumulative;
+            }
+        }
+        // Utiliser des données réelles avec compléments si nécessaire
+        else {
+            // Préparer un tableau de tous les jours des 30 derniers jours
+            for ($i = 0; $i < 30; $i++) {
+                $date = Carbon::now()->subDays(29 - $i)->format('Y-m-d');
+                $dates[] = Carbon::parse($date)->format('d/m');
+
+                // Chercher si des parrainages existent pour cette date
+                $dayData = $parrainages->firstWhere('date', $date);
+                $dailyCount = $dayData ? $dayData->count : 0;
+
+                $dailyData[] = $dailyCount;
+                $cumulative += $dailyCount;
+                $cumulativeData[] = $cumulative;
+            }
+        }
+
+        return [
+            'labels' => $dates,
+            'dailyData' => $dailyData,
+            'cumulativeData' => $cumulativeData,
+        ];
+    }
 }
