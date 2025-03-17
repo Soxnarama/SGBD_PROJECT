@@ -137,5 +137,137 @@ class UserAgentController extends Controller
         return view('agent_dge.users.edit', compact('agent'));
     }
 
-   
+    /**
+     * Met à jour les informations d'un agent DGE
+     */
+    public function update(Request $request, $id)
+    {
+        $this->checkAgentDGEAuth();
+        
+        $agent = AgentDGE::with('user')->findOrFail($id);
+        
+        // Validation des données
+        $rules = [
+            'nom' => 'required|string|max:255',
+            'prenom' => 'required|string|max:255',
+            'telephone' => 'required|string|max:20',
+        ];
+
+        // Vérifier si l'email est modifié
+        if ($agent->user->email !== $request->input('email')) {
+            $rules['email'] = 'required|string|email|max:255|unique:users';
+        } else {
+            $rules['email'] = 'required|string|email|max:255';
+        }
+
+        // Vérifier si le mot de passe est fourni
+        if ($request->filled('password')) {
+            $rules['password'] = ['required', 'confirmed', Password::min(8)->mixedCase()->numbers()];
+        }
+
+        $validator = Validator::make($request->all(), $rules);
+
+        if ($validator->fails()) {
+            return redirect()->back()->withErrors($validator)->withInput();
+        }
+
+        try {
+            // Mettre à jour l'agent DGE
+            $agent->update([
+                'nom' => $request->input('nom'),
+                'prenom' => $request->input('prenom'),
+                'telephone' => $request->input('telephone'),
+            ]);
+
+            // Mettre à jour l'utilisateur associé
+            $userUpdate = [
+                'nom_utilisateur' => $request->input('email'),
+                'email' => $request->input('email'),
+            ];
+
+            // Mettre à jour le mot de passe si fourni
+            if ($request->filled('password')) {
+                $userUpdate['password'] = Hash::make($request->input('password'));
+            }
+
+            $agent->user->update($userUpdate);
+
+            return redirect()->route('agent_dge.users.index')
+                ->with('success', 'Agent DGE mis à jour avec succès.');
+
+        } catch (\Exception $e) {
+            Log::error('Erreur lors de la mise à jour d\'un agent DGE : ' . $e->getMessage());
+            
+            return redirect()->back()
+                ->with('error', 'Une erreur est survenue lors de la mise à jour de l\'agent DGE : ' . $e->getMessage())
+                ->withInput();
+        }
+    }
+
+    /**
+     * Activer ou désactiver un agent DGE
+     */
+    public function toggleStatus($id)
+    {
+        $this->checkAgentDGEAuth();
+        
+        $agent = AgentDGE::findOrFail($id);
+        
+        // Ne pas permettre la désactivation de son propre compte
+        if ($agent->id === Auth::user()->userable_id && Auth::user()->userable_type === AgentDGE::class) {
+            return redirect()->back()
+                ->with('error', 'Vous ne pouvez pas désactiver votre propre compte.');
+        }
+        
+        try {
+            $agent->est_actif = !$agent->est_actif;
+            $agent->save();
+            
+            $statusMessage = $agent->est_actif ? 'activé' : 'désactivé';
+            
+            return redirect()->back()
+                ->with('success', 'Agent DGE ' . $statusMessage . ' avec succès.');
+                
+        } catch (\Exception $e) {
+            Log::error('Erreur lors du changement de statut d\'un agent DGE : ' . $e->getMessage());
+            
+            return redirect()->back()
+                ->with('error', 'Une erreur est survenue lors du changement de statut de l\'agent DGE.');
+        }
+    }
+
+    /**
+     * Supprimer un agent DGE
+     */
+    public function destroy($id)
+    {
+        $this->checkAgentDGEAuth();
+        
+        $agent = AgentDGE::findOrFail($id);
+        
+        // Ne pas permettre la suppression de son propre compte
+        if ($agent->id === Auth::user()->userable_id && Auth::user()->userable_type === AgentDGE::class) {
+            return redirect()->back()
+                ->with('error', 'Vous ne pouvez pas supprimer votre propre compte.');
+        }
+        
+        try {
+            // Supprimer l'utilisateur associé
+            if ($agent->user) {
+                $agent->user->delete();
+            }
+            
+            // Supprimer l'agent DGE
+            $agent->delete();
+            
+            return redirect()->route('agent_dge.users.index')
+                ->with('success', 'Agent DGE supprimé avec succès.');
+                
+        } catch (\Exception $e) {
+            Log::error('Erreur lors de la suppression d\'un agent DGE : ' . $e->getMessage());
+            
+            return redirect()->back()
+                ->with('error', 'Une erreur est survenue lors de la suppression de l\'agent DGE.');
+        }
+    }
 }
