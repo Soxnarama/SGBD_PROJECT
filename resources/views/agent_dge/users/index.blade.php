@@ -1,5 +1,5 @@
 @extends('layouts.app')
-<!-- c'est le fichier principal qui affiche l'interface permettant la gestion des agents dge -->
+
 @section('content')
 <div class="container mx-auto px-4 py-8">
     <div class="flex justify-between items-center mb-6">
@@ -8,7 +8,7 @@
             <i class="fas fa-plus mr-2"></i> Ajouter un agent
         </a>
     </div>
-
+    
     @if(session('success'))
         <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
             {{ session('success') }}
@@ -61,8 +61,8 @@
                                         Actif
                                     </span>
                                 @else
-                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
-                                        Inactif
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                        actif
                                     </span>
                                 @endif
                             </td>
@@ -74,7 +74,7 @@
                                     <a href="{{ route('agent_dge.users.edit', $agent->id) }}" class="text-yellow-600 hover:text-yellow-900">
                                         <i class="fas fa-edit"></i>
                                     </a>
-
+                                    
                                     @if($agent->id !== Auth::user()->userable_id || Auth::user()->userable_type !== 'App\\Models\\AgentDGE')
                                         <form method="POST" action="{{ route('agent_dge.users.toggle-status', $agent->id) }}" class="inline">
                                             @csrf
@@ -82,7 +82,7 @@
                                                 <i class="fas fa-{{ $agent->est_actif ? 'ban' : 'check-circle' }}"></i>
                                             </button>
                                         </form>
-
+                                        
                                         <form method="POST" action="{{ route('agent_dge.users.destroy', $agent->id) }}" class="inline" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cet agent ?')">
                                             @csrf
                                             @method('DELETE')
@@ -104,12 +104,12 @@
                 </tbody>
             </table>
         </div>
-
+        
         <div class="p-4">
             {{ $agents->links() }}
         </div>
     </div>
-
+    
     <div class="mt-6">
         <a href="{{ route('agent_dge.dashboard') }}" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
             <i class="fas fa-arrow-left mr-2"></i> Retour au tableau de bord

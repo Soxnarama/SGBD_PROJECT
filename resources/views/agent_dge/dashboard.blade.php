@@ -25,7 +25,7 @@
                         </a>
                     </div>
                 </div>
-
+                
                 <!-- Historique des imports -->
                 <div class="bg-white rounded-lg shadow-soft overflow-hidden border border-gray-100">
                     <div class="p-5">
@@ -39,7 +39,7 @@
                         </a>
                     </div>
                 </div>
-
+                
                 <!-- Gestion des candidats -->
                 <div class="bg-white rounded-lg shadow-soft overflow-hidden border border-gray-100">
                     <div class="p-5">
@@ -70,7 +70,7 @@
                         </a>
                     </div>
                 </div>
-
+                
                 <!-- Gestion des utilisateurs -->
                 <div class="bg-white rounded-lg shadow-soft overflow-hidden border border-gray-100">
                     <div class="p-5">
@@ -84,7 +84,7 @@
                         </a>
                     </div>
                 </div>
-
+                
                 <!-- Statistiques -->
                 <div class="bg-white rounded-lg shadow-soft overflow-hidden border border-gray-100">
                     <div class="p-5">
@@ -106,90 +106,90 @@
                 <div class="overflow-x-auto">
                     <table class="min-w-full bg-white rounded-lg overflow-hidden shadow-sm">
                         <tbody class="divide-y divide-gray-200">
-                        <tr>
-                            <th class="px-6 py-4 bg-gray-50 text-left text-sm font-medium text-gray-700 w-2/5">
-                                État de l'importation du fichier électoral
-                            </th>
-                            <td class="px-6 py-4 text-sm text-gray-700">
-                                @php
-                                $etatUpload = DB::select("SELECT @EtatUploadElecteurs AS etat")[0]->etat ?? false;
-                                @endphp
-
-                                @if($etatUpload)
-                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Validé</span>
-                                <span class="text-sm text-gray-500 ml-2">Un fichier électoral a déjà été importé et validé.</span>
-                                @else
-                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">En attente</span>
-                                <span class="text-sm text-gray-500 ml-2">Aucun fichier électoral n'a encore été validé.</span>
-                                @endif
-                            </td>
-                        </tr>
-                        <tr>
-                            <th class="px-6 py-4 bg-gray-50 text-left text-sm font-medium text-gray-700">
-                                Nombre d'électeurs enregistrés
-                            </th>
-                            <td class="px-6 py-4 text-sm text-gray-700">
-                                @php
-                                use App\Models\Electeur;
-                                $nbElecteurs = Electeur::count();
-                                @endphp
-                                <span class="font-semibold">{{ number_format($nbElecteurs, 0, ',', ' ') }}</span>
-                            </td>
-                        </tr>
-                        <tr>
-                            <th class="px-6 py-4 bg-gray-50 text-left text-sm font-medium text-gray-700">
-                                Nombre de candidats enregistrés
-                            </th>
-                            <td class="px-6 py-4 text-sm text-gray-700">
-                                @php
-                                use App\Models\Candidat;
-                                $nbCandidats = Candidat::count();
-                                @endphp
-                                <span class="font-semibold">{{ number_format($nbCandidats, 0, ',', ' ') }}</span>
-                            </td>
-                        </tr>
-                        <tr>
-                            <th class="px-6 py-4 bg-gray-50 text-left text-sm font-medium text-gray-700">
-                                Dernière tentative d'import
-                            </th>
-                            <td class="px-6 py-4 text-sm text-gray-700">
-                                @php
-                                use App\Models\HistoriqueUpload;
-                                $dernierUpload = HistoriqueUpload::latest('date_upload')->first();
-                                @endphp
-
-                                @if($dernierUpload)
-                                <div class="font-medium">{{ $dernierUpload->date_upload->format('d/m/Y H:i:s') }}</div>
-                                <div class="flex items-center mt-1">
-                                    @if($dernierUpload->est_succes)
-                                    <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Réussi</span>
-                                    @elseif($dernierUpload->message_erreur)
-                                    <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Erreur</span>
+                            <tr>
+                                <th class="px-6 py-4 bg-gray-50 text-left text-sm font-medium text-gray-700 w-2/5">
+                                    État de l'importation du fichier électoral
+                                </th>
+                                <td class="px-6 py-4 text-sm text-gray-700">
+                                    @php
+                                        $etatUpload = DB::select("SELECT @EtatUploadElecteurs AS etat")[0]->etat ?? false;
+                                    @endphp
+                                    
+                                    @if($etatUpload)
+                                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Validé</span>
+                                        <span class="text-sm text-gray-500 ml-2">Un fichier électoral a déjà été importé et validé.</span>
                                     @else
-                                    <span class="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">En attente</span>
+                                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">En attente</span>
+                                        <span class="text-sm text-gray-500 ml-2">Aucun fichier électoral n'a encore été validé.</span>
                                     @endif
-                                    <a href="{{ route('agent_dge.verification', ['upload_id' => $dernierUpload->id]) }}" class="ml-3 text-sm text-primary-600 hover:underline">
-                                        Voir les détails
-                                    </a>
-                                </div>
-                                @else
-                                <span class="text-sm text-gray-500">Aucun import n'a été effectué</span>
-                                @endif
-                            </td>
-                        </tr>
-                        <tr>
-                            <th class="px-6 py-4 bg-gray-50 text-left text-sm font-medium text-gray-700">
-                                Nombre d'agents DGE
-                            </th>
-                            <td class="px-6 py-4 text-sm text-gray-700">
-                                @php
-                                use App\Models\AgentDGE;
-                                $nbAgents = AgentDGE::count();
-                                $nbAgentsActifs = AgentDGE::all()->count();
-                                @endphp
-                                <span class="font-semibold">{{ $nbAgentsActifs }}</span> actifs / {{ $nbAgents }} au total
-                            </td>
-                        </tr>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="px-6 py-4 bg-gray-50 text-left text-sm font-medium text-gray-700">
+                                    Nombre d'électeurs enregistrés
+                                </th>
+                                <td class="px-6 py-4 text-sm text-gray-700">
+                                    @php
+                                        use App\Models\Electeur;
+                                        $nbElecteurs = Electeur::count();
+                                    @endphp
+                                    <span class="font-semibold">{{ number_format($nbElecteurs, 0, ',', ' ') }}</span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="px-6 py-4 bg-gray-50 text-left text-sm font-medium text-gray-700">
+                                    Nombre de candidats enregistrés
+                                </th>
+                                <td class="px-6 py-4 text-sm text-gray-700">
+                                    @php
+                                        use App\Models\Candidat;
+                                        $nbCandidats = Candidat::count();
+                                    @endphp
+                                    <span class="font-semibold">{{ number_format($nbCandidats, 0, ',', ' ') }}</span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="px-6 py-4 bg-gray-50 text-left text-sm font-medium text-gray-700">
+                                    Dernière tentative d'import
+                                </th>
+                                <td class="px-6 py-4 text-sm text-gray-700">
+                                    @php
+                                        use App\Models\HistoriqueUpload;
+                                        $dernierUpload = HistoriqueUpload::latest('date_upload')->first();
+                                    @endphp
+                                    
+                                    @if($dernierUpload)
+                                        <div class="font-medium">{{ $dernierUpload->date_upload->format('d/m/Y H:i:s') }}</div>
+                                        <div class="flex items-center mt-1">
+                                            @if($dernierUpload->est_succes)
+                                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Réussi</span>
+                                            @elseif($dernierUpload->message_erreur)
+                                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Erreur</span>
+                                            @else
+                                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">En attente</span>
+                                            @endif
+                                            <a href="{{ route('agent_dge.verification', ['upload_id' => $dernierUpload->id]) }}" class="ml-3 text-sm text-primary-600 hover:underline">
+                                                Voir les détails
+                                            </a>
+                                        </div>
+                                    @else
+                                        <span class="text-sm text-gray-500">Aucun import n'a été effectué</span>
+                                    @endif
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="px-6 py-4 bg-gray-50 text-left text-sm font-medium text-gray-700">
+                                    Nombre d'agents DGE
+                                </th>
+                                <td class="px-6 py-4 text-sm text-gray-700">
+                                    @php
+                                        use App\Models\AgentDGE;
+                                        $nbAgents = AgentDGE::count();
+                                        $nbAgentsActifs = AgentDGE::all()->count();
+                                    @endphp
+                                    <span class="font-semibold">{{ $nbAgentsActifs }}</span> actifs / {{ $nbAgents }} au total
+                                </td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>

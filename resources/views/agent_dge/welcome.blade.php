@@ -6,6 +6,7 @@
     <title>Espace Agent DGE - Système de Gestion des Parrainages</title>
     
     <!-- Utiliser Vite pour charger les ressources -->
+    {{-- <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script> --}}
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="bg-gray-50 font-sans">
